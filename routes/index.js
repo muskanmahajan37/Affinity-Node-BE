@@ -19,6 +19,8 @@ router.get('/', function(req, res, next) {
 
 	sql.on('error', err => {
 		console.log('=== err ===', err);
+		res.send('=== connection failed ===');
+		sql.close();
 	})
 
 	// sql.connect(config).then(pool => {
@@ -31,8 +33,12 @@ router.get('/', function(req, res, next) {
 	
 	sql.connect(config).then(pool => {
 		console.log('===pool===', pool);
+		res.send('=== connected successfully! ===')
+		sql.close();
 	}).catch(err => {
 		console.log('=== catch ===', err);
+		res.send('=== connenction error ===');
+		sql.close();
 	});
 
 });
