@@ -28,11 +28,13 @@ exports.get_passcode = function(req, res) {
                     .query('SELECT SocialSecurityNum as ssn FROM employee WHERE FirstName = @firstname AND LastName = @lastname');
     }).then(result => {
         var exist_user = false;
+        var user_ssn = '';
         for (var i = 0; i < result.recordset.length; i++) {
             var ssn = result.recordset[i].ssn
             var last4ssn = ssn.substr(ssn.length - 4);
             if(last4ssn == user.ssn) {
                 exist_user = true;
+                user_ssn = ssn;
                 break;
             } else {
                 exist_user = false;
@@ -40,14 +42,22 @@ exports.get_passcode = function(req, res) {
         }
         if(exist_user) {
             var random6pascode = Math.floor(100000 + Math.random() * 900000);
-            res.status(200).send({status: 0, msg: random6pascode});
+            var data = {
+                passcode: random6pascode,
+                userinfo: {
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    ssn: user_ssn
+                }
+            }
+            res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
         } else {
-            res.status(400).send({status: 1, msg: 'The information entered does not match our records, please verify and try again'});
+            res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: ''} );
         }
         sql.close();
     }).catch(err => {
         console.log('=== login catch err ===', err);
-        res.status(500).send({status: 2, msg: 'Failed to connect server'});
+        res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
         sql.close();
     });
 }
@@ -69,11 +79,13 @@ exports.login = function(req, res) {
                     .query('SELECT SocialSecurityNum as ssn FROM employee WHERE FirstName = @firstname AND LastName = @lastname');
     }).then(result => {
         var exist_user = false;
+        var user_ssn = '';
         for (var i = 0; i < result.recordset.length; i++) {
             var ssn = result.recordset[i].ssn
             var last4ssn = ssn.substr(ssn.length - 4);
             if(last4ssn == user.ssn) {
                 exist_user = true;
+                user_ssn = ssn;
                 break;
             } else {
                 exist_user = false;
@@ -81,24 +93,35 @@ exports.login = function(req, res) {
         }
         if(exist_user) {
             if(user.passcode == user.passcodeconf) {
-                res.status(200).send({status: 0, msg: ''});
+                var data = {
+                    userinfo: {
+                        firstname: user.firstname,
+                        lastname: user.lastname,
+                        ssn: user_ssn
+                    }
+                };                
+                res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
             } else {
-                res.status(400).send({status: 1, msg: 'The passcode does not match, Please re-type'});
+                var random6pascode = Math.floor(100000 + Math.random() * 900000);
+                var data = {
+                    passcode: random6pascode
+                }
+                res.status(400).send({ status: 1, msg: 'The passcode does not match, Please re-type', data: JSON.stringify(data) });
             }
             
         } else {
-            res.status(400).send({status: 1, msg: 'The information entered does not match our records, please verify and try again'});
+            res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: '' });
         }
         sql.close();
     }).catch(err => {
         console.log('=== login catch err ===', err);
-        res.status(500).send({status: 2, msg: 'Failed to connect server'});
+        res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
         sql.close();
     });
 }
 
 sql.on('error', err => {
     console.log('=== sql connect err ===', err);
-    res.status(500).send({status: 2, msg: 'Failed to connect server'});
+    res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
     sql.close();
 })
