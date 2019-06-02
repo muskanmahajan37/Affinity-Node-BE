@@ -115,7 +115,7 @@ exports.login = function(req, res) {
         sql.close();
     }).catch(err => {
         console.log('=== login catch err ===', err);
-        res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
+        res.status(500).send({ status: 2, msg: 'Failed to connect database', data: '' });
         sql.close();
     });
 }
