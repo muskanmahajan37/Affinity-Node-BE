@@ -20,7 +20,7 @@ exports.get_passcode = function(req, res) {
         lastname: req.body.lastname,
         ssn: req.body.ssn
     }
-    console.log('==user --', req);
+    console.log('======= user -- get passcode -- login step 1 ==========');
     sql.connect(config).then(pool => {
         return pool.request()
                     .input('firstname', sql.NVarChar, user.firstname)
@@ -51,8 +51,10 @@ exports.get_passcode = function(req, res) {
                 }
             }
             res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
+            console.log('======== login step 1 (get passcode) -- status 200 ========');
         } else {
             res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: ''} );
+            console.log('======== login step 1 (get passcode) -- status 400 ========');
         }
         sql.close();
     }).catch(err => {
@@ -71,7 +73,7 @@ exports.login = function(req, res) {
         passcode: req.body.passcode,
         passcodeconf: req.body.passcodeconf
     }
-    console.log('==user --', req);
+    console.log('================ user -- login last step ====================');
     sql.connect(config).then(pool => {
         return pool.request()
                     .input('firstname', sql.NVarChar, user.firstname)
@@ -101,15 +103,18 @@ exports.login = function(req, res) {
                     }
                 };                
                 res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
+                console.log('======== login last step -- status 200 ==========');
             } else {
                 var random6pascode = Math.floor(100000 + Math.random() * 900000);
                 var data = {
                     passcode: random6pascode
                 }
+                console.log('======== login last step -- status 400 -- invalid passcode =========');
                 res.status(400).send({ status: 1, msg: 'The passcode does not match, Please re-type', data: JSON.stringify(data) });
             }
             
         } else {
+            console.log('======= login last step -- status 400 -- dont exist user ========');
             res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: '' });
         }
         sql.close();
