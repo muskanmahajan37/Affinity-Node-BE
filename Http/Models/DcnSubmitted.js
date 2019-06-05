@@ -16,7 +16,8 @@ const config = {
 
 // Login First Step.
 exports.save = function(req, res) {
-    sql.connect(config).then(pool => {
+    sql.close();
+    new sql.connect(config).then(pool => {
         return pool.request()
                     .input('SocialSecurityNum', sql.VarChar(9), req.body.SocialSecurityNum.toString())
                     .input('ClientId', sql.Int, parseInt(req.body.ClientId))
@@ -56,11 +57,12 @@ exports.save = function(req, res) {
                             '@ClientSignature, @ClientSignatureDate, @HasPAF, @PafId, @SendToPhoneFlag, @Phone1, @Phone2, ' + 
                             '@SendToEmailFlag, @Email1, @Email2, @DateTimeOfSubmission, @GPSLocationOfSubmission, ' + 
                             '@ImageOfDCN, @PDFOfDCN, @createdBy, @created, @updatedBy, @updated)');
+                    // .query('SELECT DcnHeaderId FROM DcnSubmittedHeader WHERE SocialSecurityNum = @SocialSecurityNum');
     }).then(result => {
         console.log('=== result DCN Header ===', result);
         if(result.rowsAffected[0] && result.recordset[0].DcnHeaderId) {
             sql.close();
-            save_details(req, res, result.recordset[0].DcnHeaderId);
+            save_details(req, res, result.recordset[0].DcnHeaderId, 0);
         } else {
             sql.close();
             res.status(500).send({status: 1, msg: 'Invalid params.', data: ''});
@@ -78,61 +80,73 @@ sql.on('error', err => {
     res.status(500).send({status: 2, msg: 'Failed to connect server'});
 })
 
-save_details = function (req, res, DcnHeaderId) {
+save_details = function (req, res, DcnHeaderId, index) {
+    sql.close();
     console.log('****************************************');
     console.log('**** DcnHeaderId ****', DcnHeaderId);
-    console.log('**** req ****', req.body);
     console.log('****************************************');
-    for (var i = 0; i < 7; i++) {
-        sql.connect(config).then(pool => {
-            return pool.request()
-                        .input('DcnId', sql.Int, DcnHeaderId)
-                        .input('DayOfWeek', sql.VarChar(20), JSON.parse(req.body.DCNWeek[i]).toString())
-                        .input('TimeIn1', sql.VarChar(20), JSON.parse(req.body.TimeIn1[i]).toString())
-                        .input('TimeOut1', sql.VarChar(20), JSON.parse(req.body.TimeOut1[i]).toString())
-                        .input('TimeIn2', sql.VarChar(20), JSON.parse(req.body.TimeIn2[i]).toString())
-                        .input('TimeOut2', sql.VarChar(20), JSON.parse(req.body.TimeOut2[i]).toString())
-                        .input('TimeIn3', sql.VarChar(20), JSON.parse(req.body.TimeIn3[i]).toString())
-                        .input('TimeOut3', sql.VarChar(20), JSON.parse(req.body.TimeOut3[i]).toString())
-                        .input('TimeIn4', sql.VarChar(20), JSON.parse(req.body.TimeIn4[i]).toString())
-                        .input('TimeOut4', sql.VarChar(20), JSON.parse(req.body.TimeOut4[i]).toString())
-                        .input('HoursPerDay', sql.Int, parseInt(req.body.HoursPerDay[i]))
-                        .input('MobilityWalkingMovingFlag', sql.Bit, (req.body.MobilityWalkingMovingFlag[i] == 'true'))
-                        .input('BathingShoweringFlag', sql.Bit, (req.body.BathingShoweringFlag[i] == 'true'))
-                        .input('DressingFlag', sql.Bit, (req.body.DressingFlag[i] == 'true')) // PAF ID---
-                        .input('ToiletingFlag', sql.Bit, (req.body.ToiletingFlag[i] == 'true'))
-                        .input('EatingFlag', sql.Bit, (req.body.EatingFlag[i] == 'true'))
-                        .input('ContinenceBladderBowelFlag', sql.Bit, (req.body.ContinenceBladderBowelFlag[i] == 'true'))
-                        .input('MealPrepIncludingFlag', sql.Bit, (req.body.MealPrepIncludingFlag[i] == 'true'))
-                        .input('LaundryFlag', sql.Bit, (req.body.LaundryFlag[i] == 'true'))
-                        .input('LightHousekeepingIncludingFlag', sql.Bit, (req.body.LightHousekeepingIncludingFlag[i] == 'true'))
-                        .input('PersonalCareHours', sql.Int, new Date())
-                        .input('HomemakingHours', sql.Int, req.body.GPSLocationOfSubmission.toString() ? req.body.GPSLocationOfSubmission.toString() : '') // GPS ---
-                        .input('CompanionHours', sql.Int, '/public/images/' + req.body.DCNImageFileName + '.png') // ImageOfDCN
-                        .input('RespiteHours', sql.Int, req.body.PDFOfDCN.toString() ? req.body.PDFOfDCN.toString() : '') // PDFOfDCN --- 
-                        .input('AttendantHours', sql.Int, req.body.author.toString())
-                        .input('createdBy', sql.VarChar(1000), req.body.author.toString())
-                        .input('created', sql.DateTime, new Date())
-                        .input('updatedBy', sql.VarChar(1000), req.body.author.toString())
-                        .input('updated', sql.DateTime, new Date())
-                        .query('INSERT INTO DcnSubmittedHeader (DcnId, DayOfWeek, LastSaturdayDate, ' + 
-                                'HourlyFlag, LiveInFlag, OvernightFlag, WeekTotalHours, ComplianceFlag, CaregiverSignature, ' + 
-                                'CaregiverSignatureDate, ClientSignature, ClientSignatureDate, HasPAF, PafId, SendToPhoneFlag, ' + 
-                                'Phone1, Phone2, SendToEmailFlag, Email1, Email2, DateTimeOfSubmission, ' + 
-                                'GPSLocationOfSubmission, ImageOfDCN, PDFOfDCN, createdBy, created, updatedBy, updated) OUTPUT INSERTED.DcnHeaderId ' + 
-                                'VALUES (@DcnId, @DayOfWeek, @LastSaturdayDate, @HourlyFlag, @LiveInFlag, @OvernightFlag, ' + 
-                                '@WeekTotalHours, @ComplianceFlag, @CaregiverSignature, @CaregiverSignatureDate, ' + 
-                                '@ClientSignature, @ClientSignatureDate, @HasPAF, @PafId, @SendToPhoneFlag, @Phone1, @Phone2, ' + 
-                                '@SendToEmailFlag, @Email1, @Email2, @DateTimeOfSubmission, @GPSLocationOfSubmission, ' + 
-                                '@ImageOfDCN, @PDFOfDCN, @createdBy, @created, @updatedBy, @updated)');
-        }).then(result => {
-            console.log('=== result DCN Detail ===', result);
-            
-            
-        }).catch(err => {
-            console.log('=== DCN Submitted err ===', err);
-            res.status(500).send({status: 2, msg: 'Failed to connect server'});
-            sql.close();
-        });
-    }
+    var ii = parseInt(index);
+    new sql.connect(config).then(pool => {
+        return pool.request()
+                    .input('DcnId', sql.Int, DcnHeaderId)
+                    .input('DayOfWeek', sql.VarChar(20), JSON.parse(req.body.DCNWeek)[ii] ? JSON.parse(req.body.DCNWeek)[ii].toString() : '')
+                    .input('TimeIn1', sql.VarChar(20), JSON.parse(req.body.TimeIn1)[ii] ? JSON.parse(req.body.TimeIn1)[ii].toString() : '')
+                    .input('TimeOut1', sql.VarChar(20), JSON.parse(req.body.TimeOut1)[ii] ? JSON.parse(req.body.TimeOut1)[ii].toString() : '')
+                    .input('TimeIn2', sql.VarChar(20), JSON.parse(req.body.TimeIn2)[ii] ? JSON.parse(req.body.TimeIn2)[ii].toString() : '')
+                    .input('TimeOut2', sql.VarChar(20), JSON.parse(req.body.TimeOut2)[ii] ? JSON.parse(req.body.TimeOut2)[ii].toString() : '')
+                    .input('TimeIn3', sql.VarChar(20), JSON.parse(req.body.TimeIn3)[ii] ? JSON.parse(req.body.TimeIn3)[ii].toString() : '')
+                    .input('TimeOut3', sql.VarChar(20), JSON.parse(req.body.TimeOut3)[ii] ? JSON.parse(req.body.TimeOut3)[ii].toString() : '')
+                    .input('TimeIn4', sql.VarChar(20), JSON.parse(req.body.TimeIn4)[ii] ? JSON.parse(req.body.TimeIn4)[ii].toString() : '')
+                    .input('TimeOut4', sql.VarChar(20), JSON.parse(req.body.TimeOut4)[ii] ? JSON.parse(req.body.TimeOut4)[ii].toString() : '')
+                    .input('HoursPerDay', sql.Int, req.body.HoursPerDay ? parseInt(JSON.parse(req.body.HoursPerDay)[ii]) : 0)
+                    .input('MobilityWalkingMovingFlag', sql.Bit, (JSON.parse(req.body.MobilityWalkingMovingFlag)[ii] == 'true'))
+                    .input('BathingShoweringFlag', sql.Bit, (JSON.parse(req.body.BathingShoweringFlag)[ii] == 'true'))
+                    .input('DressingFlag', sql.Bit, (JSON.parse(req.body.DressingFlag)[ii] == 'true'))
+                    .input('ToiletingFlag', sql.Bit, (JSON.parse(req.body.ToiletingFlag)[ii] == 'true'))
+                    .input('EatingFlag', sql.Bit, (JSON.parse(req.body.EatingFlag)[ii] == 'true'))
+                    .input('ContinenceBladderBowelFlag', sql.Bit, (JSON.parse(req.body.ContinenceBladderBowelFlag)[ii] == 'true'))
+                    .input('MealPrepIncludingFlag', sql.Bit, (JSON.parse(req.body.MealPrepIncludingFlag)[ii] == 'true'))
+                    .input('LaundryFlag', sql.Bit, (JSON.parse(req.body.LaundryFlag)[ii] == 'true'))
+                    .input('LightHousekeepingIncludingFlag', sql.Bit, (JSON.parse(req.body.LightHousekeepingIncludingFlag)[ii] == 'true'))
+                    .input('PersonalCareHours', sql.Int, req.body.PersonalCareHours ? parseInt(req.body.PersonalCareHours) : 0)
+                    .input('HomemakingHours', sql.Int, req.body.HomemakingHours ? parseInt(req.body.HomemakingHours) : 0)
+                    .input('CompanionHours', sql.Int, req.body.CompanionHours ? parseInt(req.body.CompanionHours) : 0)
+                    .input('RespiteHours', sql.Int, req.body.RespiteHours ? parseInt(req.body.RespiteHours) : 0)
+                    .input('AttendantHours', sql.Int, req.body.AttendantHours ? parseInt(req.body.AttendantHours) : 0)
+                    .input('createdBy', sql.VarChar(1000), req.body.author.toString())
+                    .input('created', sql.DateTime, new Date())
+                    .input('updatedBy', sql.VarChar(1000), req.body.author.toString())
+                    .input('updated', sql.DateTime, new Date())
+                    .query('INSERT INTO DcnSubmittedDetail (DcnId, DayOfWeek, TimeIn1, TimeOut1, TimeIn2, TimeOut2, ' + 
+                                'TimeIn3, TimeOut3, TimeIn4, TimeOut4, HoursPerDay, MobilityWalkingMovingFlag, ' + 
+                                'BathingShoweringFlag, DressingFlag, ToiletingFlag, EatingFlag, ContinenceBladderBowelFlag, ' + 
+                                'MealPrepIncludingFlag, LaundryFlag, LightHousekeepingIncludingFlag, PersonalCareHours, HomemakingHours, ' + 
+                                'CompanionHours, RespiteHours, AttendantHours, createdBy, created, updatedBy, ' + 
+                                'updated) OUTPUT INSERTED.DcnDetailId VALUES (@DcnId, @DayOfWeek, @TimeIn1, @TimeOut1, ' + 
+                                '@TimeIn2, @TimeOut2, @TimeIn3, @TimeOut3, @TimeIn4, @TimeOut4, @HoursPerDay, ' + 
+                                '@MobilityWalkingMovingFlag, @BathingShoweringFlag, @DressingFlag, @ToiletingFlag, ' + 
+                                '@EatingFlag, @ContinenceBladderBowelFlag, @MealPrepIncludingFlag, @LaundryFlag, ' + 
+                                '@LightHousekeepingIncludingFlag, @PersonalCareHours, @HomemakingHours, @CompanionHours, ' + 
+                                '@RespiteHours, @AttendantHours, @createdBy, @created, @updatedBy, @updated)');
+    }).then(result => {
+        console.log('=== result DCN Detail ===', result, '******', ii);
+        sql.close();
+        if(ii >= 6) {
+            if (result.recordset[0].DcnDetailId) {
+                res.status(200).send({status: 0, msg: 'Successfully saved.', data: ''});
+            } else {
+                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+            }
+        } else {
+            if(result.recordset[0].DcnDetailId) {
+                save_details(req, res, DcnHeaderId, ii + 1);
+            } else {
+                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+            }
+        }
+    }).catch(err => {
+        console.log('=== DCN Detail Submitted err ===', err);
+        res.status(500).send({status: 2, msg: 'Failed to connect server in detail step'});
+        sql.close();
+    });
 }
