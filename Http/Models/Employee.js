@@ -15,6 +15,7 @@ const config = {
 
 // Login First Step.
 exports.get_passcode = function(req, res) {
+    sql.close();
     var user = {
         firstname: req.body.firstname,
         lastname: req.body.lastname,
@@ -50,22 +51,24 @@ exports.get_passcode = function(req, res) {
                     ssn: user_ssn
                 }
             }
+            sql.close();
             res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
             console.log('======== login step 1 (get passcode) -- status 200 ========');
         } else {
+            sql.close();
             res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: ''} );
             console.log('======== login step 1 (get passcode) -- status 400 ========');
         }
-        sql.close();
     }).catch(err => {
         console.log('=== login catch err ===', err);
-        res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
         sql.close();
+        res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
     });
 }
 
 // Login Last Step
 exports.login = function(req, res) {
+    sql.close();
     var user = {
         firstname: req.body.firstname,
         lastname: req.body.lastname,
@@ -101,7 +104,8 @@ exports.login = function(req, res) {
                         lastname: user.lastname,
                         ssn: user_ssn
                     }
-                };                
+                }; 
+                sql.close();               
                 res.status(200).send({ status: 0, msg: '', data: JSON.stringify(data) });
                 console.log('======== login last step -- status 200 ==========');
             } else {
@@ -109,24 +113,24 @@ exports.login = function(req, res) {
                 var data = {
                     passcode: random6pascode
                 }
+                sql.close();
                 console.log('======== login last step -- status 400 -- invalid passcode =========');
                 res.status(400).send({ status: 1, msg: 'The passcode does not match, Please re-type', data: JSON.stringify(data) });
             }
-            
         } else {
+            sql.close();
             console.log('======= login last step -- status 400 -- dont exist user ========');
             res.status(400).send({ status: 1, msg: 'The information entered does not match our records, please verify and try again', data: '' });
         }
-        sql.close();
     }).catch(err => {
+        sql.close();
         console.log('=== login catch err ===', err);
         res.status(500).send({ status: 2, msg: 'Failed to connect database', data: '' });
-        sql.close();
     });
 }
 
 sql.on('error', err => {
+    sql.close();
     console.log('=== sql connect err ===', err);
     res.status(500).send({ status: 2, msg: 'Failed to connect server', data: '' });
-    sql.close();
 })

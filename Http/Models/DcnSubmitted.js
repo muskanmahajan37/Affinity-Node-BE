@@ -21,6 +21,7 @@ exports.save = function(req, res) {
         return pool.request()
                     .input('SocialSecurityNum', sql.VarChar(9), req.body.SocialSecurityNum.toString())
                     .input('ClientId', sql.Int, parseInt(req.body.ClientId))
+                    .input('ClientName', sql.VarChar(20), req.body.ClientName.toString())
                     .input('LastSaturdayDate', sql.VarChar(10), req.body.LastSaturdayDate.toString())
                     .input('HourlyFlag', sql.Bit, (req.body.HourlyFlag == 'true'))
                     .input('LiveInFlag', sql.Bit, (req.body.LiveInFlag == 'true'))
@@ -47,12 +48,12 @@ exports.save = function(req, res) {
                     .input('created', sql.DateTime, new Date())
                     .input('updatedBy', sql.VarChar(1000), req.body.author.toString())
                     .input('updated', sql.DateTime, new Date())
-                    .query('INSERT INTO DcnSubmittedHeader (SocialSecurityNum, ClientId, LastSaturdayDate, ' + 
+                    .query('INSERT INTO DcnSubmittedHeader (SocialSecurityNum, ClientId, ClientName, LastSaturdayDate, ' + 
                             'HourlyFlag, LiveInFlag, OvernightFlag, WeekTotalHours, ComplianceFlag, CaregiverSignature, ' + 
                             'CaregiverSignatureDate, ClientSignature, ClientSignatureDate, HasPAF, PafId, SendToPhoneFlag, ' + 
                             'Phone1, Phone2, SendToEmailFlag, Email1, Email2, DateTimeOfSubmission, ' + 
                             'GPSLocationOfSubmission, ImageOfDCN, PDFOfDCN, createdBy, created, updatedBy, updated) OUTPUT INSERTED.DcnHeaderId ' + 
-                            'VALUES (@SocialSecurityNum, @ClientId, @LastSaturdayDate, @HourlyFlag, @LiveInFlag, @OvernightFlag, ' + 
+                            'VALUES (@SocialSecurityNum, @ClientId, @ClientName, @LastSaturdayDate, @HourlyFlag, @LiveInFlag, @OvernightFlag, ' + 
                             '@WeekTotalHours, @ComplianceFlag, @CaregiverSignature, @CaregiverSignatureDate, ' + 
                             '@ClientSignature, @ClientSignatureDate, @HasPAF, @PafId, @SendToPhoneFlag, @Phone1, @Phone2, ' + 
                             '@SendToEmailFlag, @Email1, @Email2, @DateTimeOfSubmission, @GPSLocationOfSubmission, ' + 
@@ -149,4 +150,127 @@ save_details = function (req, res, DcnHeaderId, index) {
         res.status(500).send({status: 2, msg: 'Failed to connect server in detail step'});
         sql.close();
     });
+}
+
+exports.read = function(req, res) {
+    sql.close();
+    new sql.connect(config).then(pool => {
+        return pool.request()
+                    .input('SocialSecurityNum', sql.VarChar(9), req.body.SocialSecurityNum.toString())
+                    .input('ClientId', sql.Int, parseInt(req.body.ClientId))
+                    .input('LastSaturdayDate', sql.VarChar(10), req.body.LastSaturdayDate.toString())
+                    .query('SELECT DcnHeaderId, ClientName, LastSaturdayDate FROM DcnSubmittedHeader WHERE SocialSecurityNum = @SocialSecurityNum AND ClientId = @ClientId AND LastSaturdayDate = @LastSaturdayDate');
+    }).then(result => {
+        console.log('=== Getting DCN Items - Result: ===', result);
+        if(result.rowsAffected[0]) {
+            res.status(200).send({status: 0, msg: '', data: JSON.stringify(result.recordset)});
+        } else {
+            res.status(400).send({status: 1, msg: 'There is no the matched result', data: ''});
+        }
+    }).catch(err => {
+        sql.close();
+        console.log('=== Getting DCN Items - Error: ===', err);
+        res.status(500).send({status: 2, msg: 'Failed to connect server.', data: ''});
+    })
+}
+
+exports.read_detail = function(req, res) {
+    sql.close();
+    new sql.connect(config).then(pool => {
+        return pool.request()
+                    .input('DcnHeaderId', sql.Int, parseInt(req.body.DcnHeaderId))
+                    .query('SELECT * FROM DcnSubmittedHeader WHERE DcnHeaderId = @DcnHeaderId');
+    }).then(result => {
+        console.log('=== Getting DCN Items - Result: ===', result.rowsAffected[0]);
+        if(result.rowsAffected[0]) {
+            var DCNObj = result.recordset[0];
+            get_DCNDetail(req, res, DCNObj);
+        } else {
+            
+        }
+    }).catch(err => {
+        sql.close();
+        console.log('=== Getting DCN Items - Error: ===', err);
+        res.status(500).send({status: 2, msg: 'Failed to connect server.', data: ''});
+    })
+}
+
+function get_DCNDetail(req, res, DCNObj) {
+    sql.close();
+    var DcnHeaderId = parseInt(DCNObj.DcnHeaderId);
+    new sql.connect(config).then(pool => {
+        return pool.request()
+                    .input('DcnId', sql.Int, DcnHeaderId)
+                    .query('SELECT * FROM DcnSubmittedDetail WHERE DcnId = @DcnId');
+    }).then(result => {
+        console.log('=== Getting DCN Items Details - Result: ===', result.rowsAffected[0]);
+        if(result.rowsAffected[0]) {
+            var rows = result.recordset;
+            var DCNWeekArr = []; var TimeIn1Arr = []; var TimeOut1Arr = [];
+            var TimeIn2Arr = []; var TimeOut2Arr = []; var TimeIn3Arr = [];
+            var TimeOut3Arr = []; var TimeIn4Arr = []; var TimeOut4Arr = [];
+            var HoursPerDayArr = []; var MobilityWalkingMovingFlag = [];
+            var BathingShoweringFlag = []; var DressingFlag = [];
+            var ToiletingFlag = []; var EatingFlag = [];
+            var ContinenceBladderBowelFlag = []; var MealPrepIncludingFlag = [];
+            var LaundryFlag = []; var LightHousekeepingIncludingFlag = [];
+            var PersonalCareHours = 0; var HomemakingHours = 0; var CompanionHours = 0;
+            var RespiteHours = 0; var AttendantHours = 0;
+            DCNObj.PersonalCareHours = PersonalCareHours; DCNObj.HomemakingHours = HomemakingHours;
+            DCNObj.CompanionHours = CompanionHours; DCNObj.RespiteHours = RespiteHours;
+            DCNObj.AttendantHours = AttendantHours;
+            for (var i = 0; i < rows.length; i++) {
+                DCNWeekArr.push(rows[i].DayOfWeek);
+                TimeIn1Arr.push(rows[i].TimeIn1);
+                TimeOut1Arr.push(rows[i].TimeOut1);
+                TimeIn2Arr.push(rows[i].TimeIn2);
+                TimeOut2Arr.push(rows[i].TimeOut2);
+                TimeIn3Arr.push(rows[i].TimeIn3);
+                TimeOut3Arr.push(rows[i].TimeOut3);
+                TimeIn4Arr.push(rows[i].TimeIn4);
+                TimeOut4Arr.push(rows[i].TimeOut4);
+                HoursPerDayArr.push(rows[i].HoursPerDay);
+                MobilityWalkingMovingFlag.push(rows[i].MobilityWalkingMovingFlag);
+                BathingShoweringFlag.push(rows[i].BathingShoweringFlag);
+                DressingFlag.push(rows[i].DressingFlag);
+                ToiletingFlag.push(rows[i].ToiletingFlag);
+                EatingFlag.push(rows[i].EatingFlag);
+                ContinenceBladderBowelFlag.push(rows[i].ContinenceBladderBowelFlag);
+                MealPrepIncludingFlag.push(rows[i].MealPrepIncludingFlag);
+                LaundryFlag.push(rows[i].LaundryFlag);
+                LightHousekeepingIncludingFlag.push(rows[i].LightHousekeepingIncludingFlag);
+            }
+            DCNObj.DCNWeek = DCNWeekArr;
+            DCNObj.TimeIn1 = TimeIn1Arr;
+            DCNObj.TimeOut1 = TimeOut1Arr;
+            DCNObj.TimeIn2 = TimeIn2Arr;
+            DCNObj.TimeOut2 = TimeOut2Arr;
+            DCNObj.TimeIn3 = TimeIn3Arr;
+            DCNObj.TimeOut3 = TimeOut3Arr;
+            DCNObj.TimeIn4 = TimeIn4Arr;
+            DCNObj.TimeOut4 = TimeOut4Arr;
+            DCNObj.HoursPerDay = HoursPerDayArr;
+            DCNObj.MobilityWalkingMovingFlag = MobilityWalkingMovingFlag;
+            DCNObj.BathingShoweringFlag = BathingShoweringFlag;
+            DCNObj.DressingFlag = DressingFlag;
+            DCNObj.ToiletingFlag = ToiletingFlag;
+            DCNObj.EatingFlag = EatingFlag;
+            DCNObj.ContinenceBladderBowelFlag = ContinenceBladderBowelFlag;
+            DCNObj.MealPrepIncludingFlag = MealPrepIncludingFlag;
+            DCNObj.LaundryFlag = LaundryFlag;
+            DCNObj.LightHousekeepingIncludingFlag = LightHousekeepingIncludingFlag;
+            console.log('***************************************************');
+            console.log('***** ||| DCNOBJECT: ||| *****', DCNObj);
+            console.log('***************************************************');
+            sql.close();
+            res.status(200).send({status: 0, msg: '', data: JSON.stringify(DCNObj)});
+        } else {
+            sql.close();
+            res.status(400).send({status: 1, msg: 'Finding Data does not exist.', data: ''});
+        }
+    }).catch(err => {
+        sql.close();
+        console.log('=== Getting DCN Items Details - Error: ===', err);
+        res.status(500).send({status: 2, msg: 'Failed to connect server.', data: ''});
+    })
 }

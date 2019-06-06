@@ -24,6 +24,8 @@ router.post('/login/confirm_passcode', Auth.confirm_passcode);
 
 /* ---------------- Control Panel API ------------------- */
 router.get('/cpanel/client', Cpanel.client);
+router.post('/get_dcnlist', DCN.get_dcnlist);
+router.post('/get_dcndetail', DCN.get_dcndetail);
 
 /* ---------------- Sign And Send API ------------------- */
 router.post('/send_data', upload.single('ImageOfDCN'), DCN.save_data);
