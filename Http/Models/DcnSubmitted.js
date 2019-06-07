@@ -48,16 +48,17 @@ exports.save = function(req, res) {
                     .input('created', sql.DateTime, new Date())
                     .input('updatedBy', sql.VarChar(1000), req.body.author.toString())
                     .input('updated', sql.DateTime, new Date())
+                    .input('TimeInOutLength', sql.Int, parseInt(req.body.TimeInOutLength))
                     .query('INSERT INTO DcnSubmittedHeader (SocialSecurityNum, ClientId, ClientName, LastSaturdayDate, ' + 
                             'HourlyFlag, LiveInFlag, OvernightFlag, WeekTotalHours, ComplianceFlag, CaregiverSignature, ' + 
                             'CaregiverSignatureDate, ClientSignature, ClientSignatureDate, HasPAF, PafId, SendToPhoneFlag, ' + 
                             'Phone1, Phone2, SendToEmailFlag, Email1, Email2, DateTimeOfSubmission, ' + 
-                            'GPSLocationOfSubmission, ImageOfDCN, PDFOfDCN, createdBy, created, updatedBy, updated) OUTPUT INSERTED.DcnHeaderId ' + 
+                            'GPSLocationOfSubmission, ImageOfDCN, PDFOfDCN, createdBy, created, updatedBy, updated, TimeInOutLength) OUTPUT INSERTED.DcnHeaderId ' + 
                             'VALUES (@SocialSecurityNum, @ClientId, @ClientName, @LastSaturdayDate, @HourlyFlag, @LiveInFlag, @OvernightFlag, ' + 
                             '@WeekTotalHours, @ComplianceFlag, @CaregiverSignature, @CaregiverSignatureDate, ' + 
                             '@ClientSignature, @ClientSignatureDate, @HasPAF, @PafId, @SendToPhoneFlag, @Phone1, @Phone2, ' + 
                             '@SendToEmailFlag, @Email1, @Email2, @DateTimeOfSubmission, @GPSLocationOfSubmission, ' + 
-                            '@ImageOfDCN, @PDFOfDCN, @createdBy, @created, @updatedBy, @updated)');
+                            '@ImageOfDCN, @PDFOfDCN, @createdBy, @created, @updatedBy, @updated, @TimeInOutLength)');
                     // .query('SELECT DcnHeaderId FROM DcnSubmittedHeader WHERE SocialSecurityNum = @SocialSecurityNum');
     }).then(result => {
         console.log('=== result DCN Header ===', result);
@@ -263,7 +264,7 @@ function get_DCNDetail(req, res, DCNObj) {
             console.log('***** ||| DCNOBJECT: ||| *****', DCNObj);
             console.log('***************************************************');
             sql.close();
-            res.status(200).send({status: 0, msg: '', data: JSON.stringify(DCNObj)});
+            res.status(200).send({status: 0, msg: '', data: DCNObj});
         } else {
             sql.close();
             res.status(400).send({status: 1, msg: 'Finding Data does not exist.', data: ''});
