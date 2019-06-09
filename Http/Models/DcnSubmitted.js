@@ -26,7 +26,7 @@ exports.save = function(req, res) {
                     .input('HourlyFlag', sql.Bit, (req.body.HourlyFlag == 'true'))
                     .input('LiveInFlag', sql.Bit, (req.body.LiveInFlag == 'true'))
                     .input('OvernightFlag', sql.Bit, (req.body.OvernightFlag == 'true'))
-                    .input('WeekTotalHours', sql.Int, parseInt(req.body.WeekTotalHours) ? parseInt(req.body.WeekTotalHours) : 0)
+                    .input('WeekTotalHours', sql.Float, parseFloat(req.body.WeekTotalHours) ? parseFloat(req.body.WeekTotalHours) : 0)
                     .input('ComplianceFlag', sql.Bit, req.body.ComplianceFlag)
                     .input('CaregiverSignature', sql.NVarChar(2147483647), req.body.CaregiverSignature.toString())
                     .input('CaregiverSignatureDate', sql.VarChar(10), req.body.CaregiverSignatureDate.toString())
@@ -100,7 +100,7 @@ save_details = function (req, res, DcnHeaderId, index) {
                     .input('TimeOut3', sql.VarChar(20), JSON.parse(req.body.TimeOut3)[ii] ? JSON.parse(req.body.TimeOut3)[ii].toString() : '')
                     .input('TimeIn4', sql.VarChar(20), JSON.parse(req.body.TimeIn4)[ii] ? JSON.parse(req.body.TimeIn4)[ii].toString() : '')
                     .input('TimeOut4', sql.VarChar(20), JSON.parse(req.body.TimeOut4)[ii] ? JSON.parse(req.body.TimeOut4)[ii].toString() : '')
-                    .input('HoursPerDay', sql.Int, req.body.HoursPerDay ? parseInt(JSON.parse(req.body.HoursPerDay)[ii]) : 0)
+                    .input('HoursPerDay', sql.Float, req.body.HoursPerDay ? parseFloat(JSON.parse(req.body.HoursPerDay)[ii]) : 0)
                     .input('MobilityWalkingMovingFlag', sql.Bit, (JSON.parse(req.body.MobilityWalkingMovingFlag)[ii] == 'true'))
                     .input('BathingShoweringFlag', sql.Bit, (JSON.parse(req.body.BathingShoweringFlag)[ii] == 'true'))
                     .input('DressingFlag', sql.Bit, (JSON.parse(req.body.DressingFlag)[ii] == 'true'))
@@ -216,11 +216,15 @@ function get_DCNDetail(req, res, DCNObj) {
             var ContinenceBladderBowelFlag = []; var MealPrepIncludingFlag = [];
             var LaundryFlag = []; var LightHousekeepingIncludingFlag = [];
             var PersonalCareHours = 0; var HomemakingHours = 0; var CompanionHours = 0;
-            var RespiteHours = 0; var AttendantHours = 0;
+            var RespiteHours = 0; var AttendantHours = 0; 
+            var selectedWeekArr = []; // ref
+            var DcnDetailIdArr = []; // ref
             DCNObj.PersonalCareHours = PersonalCareHours; DCNObj.HomemakingHours = HomemakingHours;
             DCNObj.CompanionHours = CompanionHours; DCNObj.RespiteHours = RespiteHours;
             DCNObj.AttendantHours = AttendantHours;
             for (var i = 0; i < rows.length; i++) {
+                selectedWeekArr.push(rows[i].DayOfWeek.split('-')[2]);
+                DcnDetailIdArr.push(rows[i].DcnDetailId);
                 DCNWeekArr.push(rows[i].DayOfWeek);
                 TimeIn1Arr.push(rows[i].TimeIn1);
                 TimeOut1Arr.push(rows[i].TimeOut1);
@@ -241,6 +245,8 @@ function get_DCNDetail(req, res, DCNObj) {
                 LaundryFlag.push(rows[i].LaundryFlag);
                 LightHousekeepingIncludingFlag.push(rows[i].LightHousekeepingIncludingFlag);
             }
+            DCNObj.selectedWeek = selectedWeekArr;
+            DCNObj.DcnDetailIds = DcnDetailIdArr;
             DCNObj.DCNWeek = DCNWeekArr;
             DCNObj.TimeIn1 = TimeIn1Arr;
             DCNObj.TimeOut1 = TimeOut1Arr;
