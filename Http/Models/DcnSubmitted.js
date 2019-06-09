@@ -1,5 +1,7 @@
 const sql = require('mssql');
 var moment = require('moment');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
 
 const config = {
     user: process.env.MSSQL_USERNAME,
@@ -17,6 +19,28 @@ const config = {
 // Login First Step.
 exports.save = function(req, res) {
     sql.close();
+    // -- Generate DCN pdf from DCN png
+    const doc = new PDFDocument();
+    var pngPath = 'public/images/ImageOfDCN_' + req.body.DCNImageFileName + '.png';
+    console.log('=== png path ===', pngPath);
+    try {
+        if (fs.existsSync(pngPath)) {
+            //file exists
+            var pdfPath = 'public/docs/PDFOfDCN_' + req.body.DCNImageFileName + '.pdf';
+            doc.pipe(fs.createWriteStream(pdfPath));
+            doc.image(pngPath, {
+                fit: [470, 600],
+                align: 'center',
+                valign: 'center'
+            });
+            doc.save();
+            doc.end();
+        }
+    } catch(err) {
+        console.error('== pdf generate err ==', err);
+    }
+    
+    // -- save the DCN Header
     new sql.connect(config).then(pool => {
         return pool.request()
                     .input('SocialSecurityNum', sql.VarChar(9), req.body.SocialSecurityNum.toString())
@@ -42,8 +66,8 @@ exports.save = function(req, res) {
                     .input('Email2', sql.VarChar(256), req.body.Email2.toString())
                     .input('DateTimeOfSubmission', sql.DateTime, new Date())
                     .input('GPSLocationOfSubmission', sql.NVarChar(60), req.body.GPSLocationOfSubmission.toString() ? req.body.GPSLocationOfSubmission.toString() : '') // GPS ---
-                    .input('ImageOfDCN', sql.VarChar(200), '/public/images/' + req.body.DCNImageFileName + '.png') // ImageOfDCN
-                    .input('PDFOfDCN', sql.VarChar(200), req.body.PDFOfDCN.toString() ? req.body.PDFOfDCN.toString() : '') // PDFOfDCN --- 
+                    .input('ImageOfDCN', sql.VarChar(200), '/public/images/ImageOfDCN_' + req.body.DCNImageFileName + '.png') // ImageOfDCN
+                    .input('PDFOfDCN', sql.VarChar(200), '/public/docs/PDFOfDCN_' + req.body.DCNImageFileName + '.pdf') // PDFOfDCN --- 
                     .input('createdBy', sql.VarChar(1000), req.body.author.toString())
                     .input('created', sql.DateTime, new Date())
                     .input('updatedBy', sql.VarChar(1000), req.body.author.toString())
