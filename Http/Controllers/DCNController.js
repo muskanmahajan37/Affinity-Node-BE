@@ -2,7 +2,11 @@ var DcnSubmitted = require('../Models/DcnSubmitted');
 
 /* save DCN form */
 exports.save_data = function (req, res) {
-    DcnSubmitted.save(req, res);
+    if (req.body.isNewDCN == 'true') {
+        DcnSubmitted.save(req, res);
+    } else {
+        DcnSubmitted.update(req, res);
+    }
 }
 
 /* get DCN item list */
