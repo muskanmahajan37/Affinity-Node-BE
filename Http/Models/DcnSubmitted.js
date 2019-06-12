@@ -160,13 +160,13 @@ save_details = function (req, res, DcnHeaderId, index) {
             if (result.recordset[0].DcnDetailId) {
                 res.status(200).send({status: 0, msg: 'Successfully saved.', data: ''});
             } else {
-                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+                res.status(200).send({status: 1, msg: 'Failed to connect database.', data: ''});
             }
         } else {
             if(result.recordset[0].DcnDetailId) {
                 save_details(req, res, DcnHeaderId, ii + 1);
             } else {
-                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+                res.status(200).send({status: 1, msg: 'Failed to connect database.', data: ''});
             }
         }
     }).catch(err => {
@@ -333,13 +333,13 @@ update_details = function (req, res, index) {
             if (result.rowsAffected[0]) {
                 res.status(200).send({status: 0, msg: 'Successfully saved.', data: ''});
             } else {
-                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+                res.status(200).send({status: 1, msg: 'Failed to connect database.', data: ''});
             }
         } else {
             if(result.rowsAffected[0]) {
                 update_details(req, res, ii + 1);
             } else {
-                res.status(400).send({status: 1, msg: 'Failed to connect database.', data: ''});
+                res.status(200).send({status: 1, msg: 'Failed to connect database.', data: ''});
             }
         }
     }).catch(err => {
@@ -365,7 +365,7 @@ exports.read = function(req, res) {
         if(result.rowsAffected[0]) {
             res.status(200).send({status: 0, msg: '', data: JSON.stringify(result.recordset)});
         } else {
-            res.status(400).send({status: 1, msg: 'There is no the matched result', data: ''});
+            res.status(200).send({status: 1, msg: 'There is no the matched result', data: ''});
         }
     }).catch(err => {
         sql.close();
@@ -388,7 +388,7 @@ exports.read_detail = function(req, res) {
             var DCNObj = result.recordset[0];
             get_DCNDetail(req, res, DCNObj);
         } else {
-            res.status(400).send({status: 1, msg: 'There is no the matched result', data: ''});
+            res.status(200).send({status: 1, msg: 'There is no the matched result', data: ''});
         }
     }).catch(err => {
         sql.close();
@@ -475,7 +475,7 @@ function get_DCNDetail(req, res, DCNObj) {
             res.status(200).send({status: 0, msg: '', data: DCNObj});
         } else {
             sql.close();
-            res.status(400).send({status: 1, msg: 'Finding Data does not exist.', data: ''});
+            res.status(200).send({status: 1, msg: 'Finding Data does not exist.', data: ''});
         }
     }).catch(err => {
         sql.close();
