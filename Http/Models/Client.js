@@ -20,22 +20,22 @@ exports.get_clients = function(req, res) {
                     .input('status', sql.NVarChar, 'A')
                     .query('SELECT ClientId, FirstName, LastName FROM client WHERE Status = @status');
     }).then(result => {
+        sql.close();
         console.log('=== result ===', result);
         if(result.recordset.length > 0) {
             res.status(200).send({status: 0, data: JSON.stringify(result.recordset), msg: ''});
         } else {
             res.status(400).send({status: 1, data: JSON.stringify(result.recordset), msg: 'There is no actived client.'});
         }
-        sql.close();
     }).catch(err => {
         console.log('=== login catch err ===', err);
-        res.status(500).send({status: 2, msg: 'Failed to connect server'});
         sql.close();
+        res.status(500).send({status: 2, msg: 'Failed to connect server'});
     });
 }
 
 sql.on('error', err => {
     console.log('=== sql connect err ===', err);
-    res.status(500).send({status: 2, msg: 'Failed to connect server'});
     sql.close();
+    res.status(500).send({status: 2, msg: 'Failed to connect server'});
 })

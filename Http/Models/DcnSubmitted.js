@@ -39,6 +39,8 @@ exports.save = function(req, res) {
         }
     } catch(err) {
         console.error('== pdf generate err ==', err);
+        sql.close();
+        res.status(500).send({status: 2, msg: 'Failed to connect server'});
     }
     
     // -- save the DCN Header
@@ -168,9 +170,9 @@ save_details = function (req, res, DcnHeaderId, index) {
             }
         }
     }).catch(err => {
+        sql.close();
         console.log('=== DCN Detail Submitted err ===', err);
         res.status(500).send({status: 2, msg: 'Failed to connect server in detail step'});
-        sql.close();
     });
 }
 
@@ -210,7 +212,9 @@ exports.update = function(req, res) {
             }
         }
     } catch(err) {
+        sql.close();
         console.error('== pdf generate err ==', err);
+        res.status(500).send({status: 2, msg: 'Failed to connect server.', data: ''});
     }
     
     // -- save the DCN Header
@@ -356,6 +360,7 @@ exports.read = function(req, res) {
                     .input('LastSaturdayDate', sql.VarChar(10), req.body.LastSaturdayDate.toString())
                     .query('SELECT DcnHeaderId, ClientName, LastSaturdayDate FROM DcnSubmittedHeader WHERE SocialSecurityNum = @SocialSecurityNum AND ClientId = @ClientId AND LastSaturdayDate = @LastSaturdayDate');
     }).then(result => {
+        sql.close();
         console.log('=== Getting DCN Items - Result: ===', result);
         if(result.rowsAffected[0]) {
             res.status(200).send({status: 0, msg: '', data: JSON.stringify(result.recordset)});
@@ -377,12 +382,13 @@ exports.read_detail = function(req, res) {
                     .input('DcnHeaderId', sql.Int, parseInt(req.body.DcnHeaderId))
                     .query('SELECT * FROM DcnSubmittedHeader WHERE DcnHeaderId = @DcnHeaderId');
     }).then(result => {
+        sql.close();
         console.log('=== Getting DCN Items - Result: ===', result.rowsAffected[0]);
         if(result.rowsAffected[0]) {
             var DCNObj = result.recordset[0];
             get_DCNDetail(req, res, DCNObj);
         } else {
-            
+            res.status(400).send({status: 1, msg: 'There is no the matched result', data: ''});
         }
     }).catch(err => {
         sql.close();
