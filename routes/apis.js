@@ -18,9 +18,9 @@ var Cpanel = require('../Http/Controllers/ControlPanelController');
 var DCN = require('../Http/Controllers/DCNController');
 
 /* ---------------- Login API ---------------*/
-router.post('/login', Auth.login);
-router.post('/login/get_passcode', Auth.get_passcode);
-router.post('/login/confirm_passcode', Auth.confirm_passcode);
+router.post('/login/get_passcode', Auth.get_passcode); // login - 1
+router.post('/login', Auth.login); // login - 2
+// router.post('/login/confirm_passcode', Auth.confirm_passcode);
 
 /* ---------------- Control Panel API ------------------- */
 router.get('/cpanel/client', Cpanel.client);

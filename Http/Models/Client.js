@@ -21,7 +21,6 @@ exports.get_clients = function(req, res) {
                     .query('SELECT ClientId, FirstName, LastName FROM client WHERE Status = @status');
     }).then(result => {
         sql.close();
-        console.log('=== result ===', result);
         if(result.recordset.length > 0) {
             res.status(200).send({status: 0, data: JSON.stringify(result.recordset), msg: ''});
         } else {
