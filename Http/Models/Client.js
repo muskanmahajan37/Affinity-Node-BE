@@ -17,8 +17,32 @@ const config = {
 exports.get_clients = function(req, res) {
     sql.connect(config).then(pool => {
         return pool.request()
+                    .input('ssn', sql.NVarChar, req.body.ssn.toString())
+                    .query('SELECT ClientId FROM DcnSubmittedHeader WHERE SocialSecurityNum = @ssn');
+    }).then(result => {
+        sql.close();
+        if(result.recordset.length > 0) {
+            var ids = '';
+            for (var i=0; i<result.recordset.length; i++) {
+                ids += i == (result.recordset.length - 1) ? (result.recordset[i].ClientId) : (result.recordset[i].ClientId + ', ');
+            }
+            get_clients_by_ids(req, res, ids);
+        } else {
+            res.status(400).send({status: 1, data: JSON.stringify(result.recordset), msg: 'There is no actived client.'});
+        }
+    }).catch(err => {
+        console.log('=== login catch err ===', err);
+        sql.close();
+        res.status(500).send({status: 2, msg: 'Failed to connect server'});
+    });
+}
+
+get_clients_by_ids = function (req, res, ids) {
+    sql.connect(config).then(pool => {
+        return pool.request()
                     .input('status', sql.NVarChar, 'A')
-                    .query('SELECT ClientId, FirstName, LastName FROM client WHERE Status = @status');
+                    .input('ids', sql.NVarChar, ids)
+                    .query('SELECT ClientId, FirstName, LastName FROM client WHERE Status = @status AND ClientId in (@ids)');
     }).then(result => {
         sql.close();
         if(result.recordset.length > 0) {

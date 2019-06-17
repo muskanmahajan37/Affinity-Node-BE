@@ -23,7 +23,7 @@ router.post('/login', Auth.login); // login - 2
 // router.post('/login/confirm_passcode', Auth.confirm_passcode);
 
 /* ---------------- Control Panel API ------------------- */
-router.get('/cpanel/client', Cpanel.client);
+router.post('/cpanel/client', Cpanel.client);
 router.post('/get_dcnlist', DCN.get_dcnlist);
 router.post('/get_dcndetail', DCN.get_dcndetail);
 
