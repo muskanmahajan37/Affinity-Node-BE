@@ -21,7 +21,7 @@ exports.get_clients = function(req, res) {
                     .query('SELECT ClientId FROM schedules WHERE SocialSecNum = @ssn');
     }).then(result => {
         sql.close();
-        console.log('=== get clients ids(in schedules table) ===', result);
+        console.log('=== get clients ids(in schedules table) ===', result.rowsAffected);
         if(result.recordset.length > 0) {
             var ids = '';
             for (var i=0; i<result.recordset.length; i++) {
@@ -41,6 +41,7 @@ exports.get_clients = function(req, res) {
 }
 
 get_clients_by_ids = function (req, res, ids) {
+    console.log('=== unique client ids ===', ids);
     sql.connect(config).then(pool => {
         return pool.request()
                     .input('status', sql.NVarChar, 'A')
@@ -48,6 +49,7 @@ get_clients_by_ids = function (req, res, ids) {
                     .query('SELECT ClientId, FirstName, LastName FROM client WHERE Status = @status AND ClientId in (@ids)');
     }).then(result => {
         sql.close();
+        console.log('=== get clients by id - result ===', result.rowsAffected);
         if(result.recordset.length > 0) {
             res.status(200).send({status: 0, data: JSON.stringify(result.recordset), msg: ''});
         } else {
