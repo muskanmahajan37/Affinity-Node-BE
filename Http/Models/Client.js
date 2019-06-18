@@ -18,13 +18,15 @@ exports.get_clients = function(req, res) {
     sql.connect(config).then(pool => {
         return pool.request()
                     .input('ssn', sql.NVarChar, req.body.ssn.toString())
-                    .query('SELECT ClientId FROM DcnSubmittedHeader WHERE SocialSecurityNum = @ssn');
+                    .query('SELECT ClientId FROM schedules WHERE SocialSecNum = @ssn');
     }).then(result => {
         sql.close();
         if(result.recordset.length > 0) {
             var ids = '';
             for (var i=0; i<result.recordset.length; i++) {
-                ids += i == (result.recordset.length - 1) ? (result.recordset[i].ClientId) : (result.recordset[i].ClientId + ', ');
+                if (!ids.indexOf(result.recordset[i].ClientId + ', ')) {
+                    ids += i == (result.recordset.length - 1) ? (result.recordset[i].ClientId) : (result.recordset[i].ClientId + ', ');
+                }
             }
             get_clients_by_ids(req, res, ids);
         } else {
