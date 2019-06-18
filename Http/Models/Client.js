@@ -21,6 +21,7 @@ exports.get_clients = function(req, res) {
                     .query('SELECT ClientId FROM schedules WHERE SocialSecNum = @ssn');
     }).then(result => {
         sql.close();
+        console.log('=== get clients ids(in schedules table) ===', result);
         if(result.recordset.length > 0) {
             var ids = '';
             for (var i=0; i<result.recordset.length; i++) {
@@ -33,7 +34,7 @@ exports.get_clients = function(req, res) {
             res.status(400).send({status: 1, data: JSON.stringify(result.recordset), msg: 'There is no actived client.'});
         }
     }).catch(err => {
-        console.log('=== login catch err ===', err);
+        console.log('=== get clients ids - catch err ===', err);
         sql.close();
         res.status(500).send({status: 2, msg: 'Failed to connect server'});
     });
@@ -53,7 +54,7 @@ get_clients_by_ids = function (req, res, ids) {
             res.status(400).send({status: 1, data: JSON.stringify(result.recordset), msg: 'There is no actived client.'});
         }
     }).catch(err => {
-        console.log('=== login catch err ===', err);
+        console.log('=== get clients by ids - catch err ===', err);
         sql.close();
         res.status(500).send({status: 2, msg: 'Failed to connect server'});
     });
