@@ -97,7 +97,7 @@ exports.login = function(req, res) {
             }
         }
         if(exist_user) {
-            if(user.passcode == user.passcodeconf) {
+            if((user.passcode == user.passcodeconf) && user.passcode) {
                 var data = {
                     userinfo: {
                         firstname: user.firstname,
